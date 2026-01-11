@@ -6,7 +6,7 @@ import pandas as pd
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
     page_title="AI Vision Lab",
-    page_icon="🧠",
+    page_icon="AI",
     layout="wide"
 )
 
@@ -31,7 +31,7 @@ st.markdown("""
 
 /* ----- Headings ----- */
 h1, h2, h3 {
-    color: #00e5ff;
+    color: #00bcd4;
     font-weight: 700;
 }
 
@@ -41,8 +41,8 @@ h1, h2, h3 {
     backdrop-filter: blur(14px);
     border-radius: 18px;
     padding: 25px;
-    box-shadow: 0 0 25px rgba(0,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 0 25px rgba(0,188,212,0.08);
+    border: 1px solid rgba(0,188,212,0.15);
     margin-bottom: 20px;
 }
 
@@ -50,27 +50,27 @@ h1, h2, h3 {
 [data-testid="stFileUploader"] {
     background: linear-gradient(135deg, #0a1f2d, #06131d);
     border-radius: 15px;
-    border: 2px dashed #00e5ff;
+    border: 2px dashed #00bcd4;
     padding: 20px;
 }
 
 /* ----- Buttons ----- */
 .stButton > button {
-    background: linear-gradient(135deg, #00e5ff, #00b0ff);
+    background: linear-gradient(135deg, #00bcd4, #0288d1);
     color: black;
     border-radius: 30px;
     padding: 10px 24px;
     font-weight: 700;
     border: none;
-    box-shadow: 0 0 15px rgba(0,229,255,0.6);
+    box-shadow: 0 0 15px rgba(0,188,212,0.6);
 }
 
 /* ----- Metrics ----- */
 [data-testid="stMetric"] {
-    background: rgba(0,229,255,0.08);
+    background: rgba(0,188,212,0.08);
     padding: 20px;
     border-radius: 15px;
-    border: 1px solid rgba(0,229,255,0.2);
+    border: 1px solid rgba(0,188,212,0.2);
 }
 
 /* ----- Dataframe ----- */
@@ -86,7 +86,7 @@ h1, h2, h3 {
 # ---------------- HEADER ----------------
 st.markdown("""
 <div class="glass">
-    <h1 style="font-size:42px; text-align:center;">🧠 AI Vision Lab</h1>
+    <h1 style="font-size:42px; text-align:center;">AI Vision Lab</h1>
     <h3 style="text-align:center; color:#90caf9;">Contour-Based Object Intelligence System</h3>
     <p style="text-align:center; color:#aaa; font-size:14px;">
         Developed by <b>Salai Nimalan (23MIA1064)</b> | Computer Vision • Geometry • AI
@@ -97,7 +97,7 @@ st.markdown("""
 # ---------------- UPLOAD SECTION ----------------
 st.markdown("""
 <div class="glass">
-    <h2>📤 Upload Visual Data</h2>
+    <h2>Upload Visual Data</h2>
     <p style="color:#aaa; font-size:14px;">Supported formats: JPG, PNG. Upload an image containing geometric shapes.</p>
 </div>
 """, unsafe_allow_html=True)
@@ -155,14 +155,14 @@ def detect_shapes(image):
             circularity = (4 * np.pi * area) / (perimeter ** 2)
             shape = "Circle" if circularity > 0.8 else "Irregular"
 
-        cv2.drawContours(image, [approx], -1, (0, 255, 255), 3)
+        cv2.drawContours(image, [approx], -1, (0, 188, 212), 3)
         cv2.putText(
             image,
             shape,
             (approx[0][0][0], approx[0][0][1] - 6),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
-            (0, 180, 255),
+            (0, 140, 255),
             2
         )
 
@@ -183,12 +183,12 @@ if uploaded_file:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("<div class='glass'><h3>📷 Raw Input</h3>", unsafe_allow_html=True)
+        st.markdown("<div class='glass'><h3>Raw Input</h3>", unsafe_allow_html=True)
         st.image(image_disp, channels="BGR", use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
-        st.markdown("<div class='glass'><h3>🧩 AI Detection Output</h3>", unsafe_allow_html=True)
+        st.markdown("<div class='glass'><h3>Detection Output</h3>", unsafe_allow_html=True)
         st.image(processed_disp, channels="BGR", use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -197,7 +197,7 @@ if uploaded_file:
 
         st.markdown("""
         <div class="glass">
-            <h2>📊 Object Intelligence Report</h2>
+            <h2>Object Intelligence Report</h2>
         </div>
         """, unsafe_allow_html=True)
 
@@ -214,4 +214,5 @@ if uploaded_file:
         st.markdown("</div>", unsafe_allow_html=True)
 
 else:
-    st.info("📥 Upload an image to begin AI-based contour analysis.")
+    st.info("Upload an image to begin contour analysis.")
+
