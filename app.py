@@ -142,9 +142,9 @@ def detect_shapes(image):
         else:
             shape = "Circle" if (4*np.pi*area)/(perimeter**2) > 0.8 else "Irregular"
 
-        cv2.drawContours(image, [approx], -1, (79,195,247), 3)
+        cv2.drawContours(image, [approx], -1, (0, 220, 120), 3)
         cv2.putText(image, shape, (approx[0][0][0], approx[0][0][1]-6),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (79,195,247), 2)
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 220, 120), 2)
 
         results.append([shape, round(area,2), round(perimeter,2)])
 
