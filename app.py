@@ -5,73 +5,126 @@ import pandas as pd
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
-    page_title="Contour Object Analyzer",
-    page_icon="📐",
+    page_title="AI Vision Lab",
+    page_icon="🧠",
     layout="wide"
 )
 
-# ---------------- CSS ----------------
+# ---------------- FUTURISTIC UI ----------------
 st.markdown("""
 <style>
-.main {
-    background-color: #e3f2fd;
+
+/* ----- Global App ----- */
+.stApp {
+    background: radial-gradient(circle at top, #0f2027, #0a0f14 70%);
+    color: #e0e0e0;
 }
-h1, h2, h3 {
-    color: #1976d2;
-}
-.small {
-    font-size: 13px;
-    color: #424242;
-}
+
+/* Remove default white blocks */
 .block-container {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
 }
-.stButton>button {
-    background-color: #1976d2;
-    color: white;
+
+/* Hide Streamlit branding */
+#MainMenu, footer, header {visibility: hidden;}
+
+/* ----- Headings ----- */
+h1, h2, h3 {
+    color: #00e5ff;
+    font-weight: 700;
 }
+
+/* ----- Glass Cards ----- */
+.glass {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(14px);
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 0 25px rgba(0,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 20px;
+}
+
+/* ----- Upload box ----- */
+[data-testid="stFileUploader"] {
+    background: linear-gradient(135deg, #0a1f2d, #06131d);
+    border-radius: 15px;
+    border: 2px dashed #00e5ff;
+    padding: 20px;
+}
+
+/* ----- Buttons ----- */
+.stButton > button {
+    background: linear-gradient(135deg, #00e5ff, #00b0ff);
+    color: black;
+    border-radius: 30px;
+    padding: 10px 24px;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0 0 15px rgba(0,229,255,0.6);
+}
+
+/* ----- Metrics ----- */
+[data-testid="stMetric"] {
+    background: rgba(0,229,255,0.08);
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid rgba(0,229,255,0.2);
+}
+
+/* ----- Dataframe ----- */
+.stDataFrame {
+    background: rgba(0,0,0,0.4);
+    border-radius: 15px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------- HEADER ----------------
-st.title(" DA1-Contour-Based Object Analyzer")
-st.markdown("**By: 23MIA1064 - SALAI NIMALAN**")
-st.divider()
+st.markdown("""
+<div class="glass">
+    <h1 style="font-size:42px; text-align:center;">🧠 AI Vision Lab</h1>
+    <h3 style="text-align:center; color:#90caf9;">Contour-Based Object Intelligence System</h3>
+    <p style="text-align:center; color:#aaa; font-size:14px;">
+        Developed by <b>Salai Nimalan (23MIA1064)</b> | Computer Vision • Geometry • AI
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
 # ---------------- UPLOAD SECTION ----------------
-st.header("Upload Your Image")
+st.markdown("""
+<div class="glass">
+    <h2>📤 Upload Visual Data</h2>
+    <p style="color:#aaa; font-size:14px;">Supported formats: JPG, PNG. Upload an image containing geometric shapes.</p>
+</div>
+""", unsafe_allow_html=True)
+
 uploaded_file = st.file_uploader(
-    "Choose an image file (PNG, JPG, JPEG)",
+    "Drop image here",
     type=["png", "jpg", "jpeg"],
-    help="Upload an image to analyze shapes and contours."
+    label_visibility="collapsed"
 )
 
 # ---------------- UTILS ----------------
 def resize_for_display(img):
     h, w = img.shape[:2]
-
-    MAX_W = 400
-    MAX_H = 300
-
+    MAX_W = 450
+    MAX_H = 350
     scale = min(MAX_W / w, MAX_H / h)
-
     if scale < 1:
         img = cv2.resize(img, (int(w * scale), int(h * scale)))
-
     return img
 
 # ---------------- SHAPE DETECTION ----------------
 def detect_shapes(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150)
-
     edges = cv2.dilate(edges, np.ones((3, 3), np.uint8), iterations=1)
 
-    contours, _ = cv2.findContours(
-        edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-    )
-
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     results = []
 
     for cnt in contours:
@@ -87,7 +140,6 @@ def detect_shapes(image):
 
         if vertices == 3:
             shape = "Triangle"
-
         elif vertices == 4:
             rect = cv2.minAreaRect(cnt)
             w, h = rect[1]
@@ -95,25 +147,22 @@ def detect_shapes(image):
                 continue
             aspect = max(w, h) / min(w, h)
             shape = "Square" if aspect < 1.15 else "Rectangle"
-
         elif vertices == 5:
             shape = "Pentagon"
-
         elif vertices == 6:
             shape = "Hexagon"
-
         else:
             circularity = (4 * np.pi * area) / (perimeter ** 2)
             shape = "Circle" if circularity > 0.8 else "Irregular"
 
-        cv2.drawContours(image, [approx], -1, (80, 200, 120), 3)
+        cv2.drawContours(image, [approx], -1, (0, 255, 255), 3)
         cv2.putText(
             image,
             shape,
             (approx[0][0][0], approx[0][0][1] - 6),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,   # 👈 reduced font size
-            (60, 120, 220),
+            0.5,
+            (0, 180, 255),
             2
         )
 
@@ -128,37 +177,41 @@ if uploaded_file:
 
     processed_img, data = detect_shapes(image.copy())
 
-    # Resize images for display
     image_disp = resize_for_display(image)
     processed_disp = resize_for_display(processed_img)
 
-    # Display images side by side
-    col1, col2 = st.columns([1, 1])
+    col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader(" Original Image")
+        st.markdown("<div class='glass'><h3>📷 Raw Input</h3>", unsafe_allow_html=True)
         st.image(image_disp, channels="BGR", use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
-        st.subheader(" Analyzed Image")
+        st.markdown("<div class='glass'><h3>🧩 AI Detection Output</h3>", unsafe_allow_html=True)
         st.image(processed_disp, channels="BGR", use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     if data:
-        df = pd.DataFrame(data, columns=["Shape", "Area", "Perimeter"])
+        df = pd.DataFrame(data, columns=["Shape", "Area (px²)", "Perimeter (px)"])
 
-        st.divider()
-        st.header(" Analysis Results")
+        st.markdown("""
+        <div class="glass">
+            <h2>📊 Object Intelligence Report</h2>
+        </div>
+        """, unsafe_allow_html=True)
 
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Total Objects Detected", len(df))
+            st.metric("Total Objects", len(df))
         with col2:
-            st.metric("Unique Shape Types", df["Shape"].nunique())
+            st.metric("Unique Shapes", df["Shape"].nunique())
         with col3:
-            st.metric("Largest Area", f"{df['Area'].max():.1f} px²")
+            st.metric("Largest Area", f"{df['Area (px²)'].max():.1f}")
 
-        st.subheader("Detailed Shape Measurements")
+        st.markdown("<div class='glass'>", unsafe_allow_html=True)
         st.dataframe(df, use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 else:
-    st.info(" Please upload an image above to start the analysis.")
+    st.info("📥 Upload an image to begin AI-based contour analysis.")
