@@ -1,94 +1,158 @@
 import streamlit as st
 import cv2
 import numpy as np
-from PIL import Image
+import pandas as pd
 
-st.set_page_config(page_title="Shape & Contour Analyzer", layout="wide")
-st.title("🔷 Shape & Contour Analyzer")
+# ---------------- PAGE CONFIG ----------------
+st.set_page_config(
+    page_title="Contour Object Analyzer",
+    page_icon="📐",
+    layout="wide"
+)
 
-uploaded = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+# ---------------- CSS ----------------
+st.markdown("""
+<style>
+.main {
+    background-color: #e3f2fd;
+}
+h1, h2, h3 {
+    color: #1976d2;
+}
+.small {
+    font-size: 13px;
+    color: #424242;
+}
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+.stButton>button {
+    background-color: #1976d2;
+    color: white;
+}
+</style>
+""", unsafe_allow_html=True)
 
-def show_image(image, caption):
-    if len(image.shape) == 2:
-        st.image(image, caption=caption)
-    else:
-        st.image(image, caption=caption, channels="BGR")
+# ---------------- HEADER ----------------
+st.title(" DA1-Contour-Based Object Analyzer")
+st.markdown("**By: 23MIA1064 - SALAI NIMALAN**")
+st.divider()
 
-if uploaded:
-    img = Image.open(uploaded)
-    img = np.array(img)
+# ---------------- UPLOAD SECTION ----------------
+st.header("Upload Your Image")
+uploaded_file = st.file_uploader(
+    "Choose an image file (PNG, JPG, JPEG)",
+    type=["png", "jpg", "jpeg"],
+    help="Upload an image to analyze shapes and contours."
+)
 
-    # Convert to grayscale safely
-    if len(img.shape) == 3:
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    else:
-        gray = img.copy()
+# ---------------- UTILS ----------------
+def resize_for_display(img, max_height=420):
+    h, w = img.shape[:2]
+    scale = max_height / h
+    if scale < 1:
+        img = cv2.resize(img, (int(w * scale), max_height))
+    return img
 
-    # ---- Noise reduction ----
-    blur = cv2.GaussianBlur(gray, (7,7), 0)
+# ---------------- SHAPE DETECTION ----------------
+def detect_shapes(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150)
 
-    # ---- Edge detection ----
-    edges = cv2.Canny(blur, 40, 120)
+    edges = cv2.dilate(edges, np.ones((3, 3), np.uint8), iterations=1)
 
-    # ---- Strengthen edges ----
-    kernel = np.ones((5,5), np.uint8)
-    edges = cv2.dilate(edges, kernel, iterations=1)
-    edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+    contours, _ = cv2.findContours(
+        edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
 
-    # ---- Find contours ----
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    output = img.copy()
     results = []
-    count = 0
-
-    h, w = gray.shape
-    min_area = 0.001 * h * w   # remove tiny noise
 
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if area < min_area:
+        if area < 1000:
             continue
 
-        peri = cv2.arcLength(cnt, True)
-        approx = cv2.approxPolyDP(cnt, 0.015 * peri, True)
+        perimeter = cv2.arcLength(cnt, True)
+        approx = cv2.approxPolyDP(cnt, 0.02 * perimeter, True)
+        vertices = len(approx)
 
-        # ---- Circularity ----
-        circularity = 4 * np.pi * area / (peri * peri + 1e-6)
+        shape = "Unknown"
 
-        # ---- Shape classification ----
-        if circularity > 0.82:
-            shape = "Circle"
+        if vertices == 3:
+            shape = "Triangle"
+
+        elif vertices == 4:
+            rect = cv2.minAreaRect(cnt)
+            w, h = rect[1]
+            if w == 0 or h == 0:
+                continue
+            aspect = max(w, h) / min(w, h)
+            shape = "Square" if aspect < 1.15 else "Rectangle"
+
+        elif vertices == 5:
+            shape = "Pentagon"
+
+        elif vertices == 6:
+            shape = "Hexagon"
+
         else:
-            if len(approx) == 3:
-                shape = "Triangle"
-            elif len(approx) == 4:
-                x,y,w1,h1 = cv2.boundingRect(approx)
-                ar = w1 / float(h1)
-                shape = "Square" if 0.90 <= ar <= 1.10 else "Rectangle"
-            elif len(approx) == 5:
-                shape = "Pentagon"
-            else:
-                shape = "Polygon"
+            circularity = (4 * np.pi * area) / (perimeter ** 2)
+            shape = "Circle" if circularity > 0.8 else "Irregular"
 
-        count += 1
+        cv2.drawContours(image, [approx], -1, (80, 200, 120), 3)
+        cv2.putText(
+            image,
+            shape,
+            (approx[0][0][0], approx[0][0][1] - 6),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,   # 👈 reduced font size
+            (60, 120, 220),
+            2
+        )
 
-        # ---- Draw results ----
-        cv2.drawContours(output, [cnt], -1, (0,255,0), 2)
-        x,y,w1,h1 = cv2.boundingRect(cnt)
-        cv2.putText(output, shape, (x, y-8),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,0,0), 2)
+        results.append([shape, round(area, 2), round(perimeter, 2)])
 
-        results.append((shape, int(area), int(peri)))
+    return image, results
 
-    col1, col2 = st.columns(2)
+# ---------------- MAIN ----------------
+if uploaded_file:
+    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+    image = cv2.imdecode(file_bytes, 1)
+
+    processed_img, data = detect_shapes(image.copy())
+
+    # Resize images for display
+    image_disp = resize_for_display(image)
+    processed_disp = resize_for_display(processed_img)
+
+    # Display images side by side
+    col1, col2 = st.columns([1, 1])
+
     with col1:
-        show_image(img, "Original Image")
+        st.subheader(" Original Image")
+        st.image(image_disp, channels="BGR", use_container_width=True)
+
     with col2:
-        show_image(output, "Detected Objects")
+        st.subheader(" Analyzed Image")
+        st.image(processed_disp, channels="BGR", use_container_width=True)
 
-    st.subheader(f"Detected Objects: {count}")
-    st.subheader("📊 Feature Table")
+    if data:
+        df = pd.DataFrame(data, columns=["Shape", "Area", "Perimeter"])
 
-    for i, r in enumerate(results):
-        st.write(f"Object {i+1} → Shape: {r[0]} | Area: {r[1]} | Perimeter: {r[2]}")
+        st.divider()
+        st.header(" Analysis Results")
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Objects Detected", len(df))
+        with col2:
+            st.metric("Unique Shape Types", df["Shape"].nunique())
+        with col3:
+            st.metric("Largest Area", f"{df['Area'].max():.1f} px²")
+
+        st.subheader("Detailed Shape Measurements")
+        st.dataframe(df, use_container_width=True)
+
+else:
+    st.info(" Please upload an image above to start the analysis.")
