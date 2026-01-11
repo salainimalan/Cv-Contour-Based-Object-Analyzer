@@ -3,14 +3,12 @@ import cv2
 import numpy as np
 import pandas as pd
 
-# ---------------- PAGE CONFIG ----------------
 st.set_page_config(
     page_title="Contour Object Analyzer",
     page_icon="Analysis",
     layout="wide"
 )
 
-# ---------------- MODERN UI ----------------
 st.markdown("""
 <style>
 
@@ -77,7 +75,6 @@ h3 { color: #bbdefb; }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- HEADER ----------------
 st.markdown("""
 <div class="panel">
     <h1 style="text-align:center;">Contour Object Analyzer</h1>
@@ -88,7 +85,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ---------------- UPLOAD ----------------
 st.markdown("""
 <div class="panel">
     <h2>Upload Image</h2>
@@ -102,7 +98,6 @@ uploaded_file = st.file_uploader(
     label_visibility="collapsed"
 )
 
-# ---------------- UTILS ----------------
 def resize_for_display(img):
     h, w = img.shape[:2]
     scale = min(500 / w, 380 / h)
@@ -110,7 +105,6 @@ def resize_for_display(img):
         img = cv2.resize(img, (int(w * scale), int(h * scale)))
     return img
 
-# ---------------- SHAPE DETECTION ----------------
 def detect_shapes(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150)
@@ -150,7 +144,6 @@ def detect_shapes(image):
 
     return image, results
 
-# ---------------- MAIN ----------------
 if uploaded_file:
     img_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
     image = cv2.imdecode(img_bytes, 1)
