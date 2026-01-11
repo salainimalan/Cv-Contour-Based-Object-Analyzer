@@ -48,11 +48,17 @@ uploaded_file = st.file_uploader(
 )
 
 # ---------------- UTILS ----------------
-def resize_for_display(img, max_height=420):
+def resize_for_display(img):
     h, w = img.shape[:2]
-    scale = max_height / h
+
+    MAX_W = 400
+    MAX_H = 300
+
+    scale = min(MAX_W / w, MAX_H / h)
+
     if scale < 1:
-        img = cv2.resize(img, (int(w * scale), max_height))
+        img = cv2.resize(img, (int(w * scale), int(h * scale)))
+
     return img
 
 # ---------------- SHAPE DETECTION ----------------
